@@ -1,8 +1,9 @@
-import re as r
+import re
 
 class LexicAnalizer:
 
     keywords: set[str]
+    operations: dict[str, str]
 
     def __init__(self):
         self.keywords = {
@@ -32,3 +33,33 @@ class LexicAnalizer:
                     'incluye', 'indiceDe', 'juntar', 'claves', 'ultimoIndiceDe', 'mapear', 'sacar', 'agregar', 'reducir', 'reducirDerecha', 'reverso', 'sacarPrimero', 'rodaja', 'algun', 'ordenar', 'empalmar', 'aCadenaLocalizada',
                     'aCadena', 'agregarInicio', 'valores'
                     }
+        
+        self.operations = {"&&": "and", "||": "or", "...": "spread", ".": "period", ",": "comma", ";": "semicolon", ":": "colon", "{": "opening_key", "}": "closing_key", "[": "opening_bra", "]": "closing_bra", 
+                           "(": "opening_par", ")": "closing_par", "++": "increment", "--": "decrement", "%=": "mod_assign", "/=": "div_assign", "*=": "times_assign", "-=": "minus_assign", "+=": "plus_assign",
+                           "**=": "power_assign", "+": "plus", "-": "minus", "*": "times", "/": "div", "%": "mod", "==": "equal", "===": "strict_equal", "!=": "neq", "!==": "strict_neq", "<=": "leq", ">=": "geq",
+                           ">": "greater", "<": "less", "=": "assign", "=>": "arrow", "!": "not", "?": "ternary", "??": "nulish"}
+    
+    def verifyRegex(self, string: str):
+        #Identifier
+        if re.fullmatch(r'(?!\d)[$\w_][\w$]*',string):
+            #Keyword
+            if(string in self.keywords):
+                print("KeyWord")
+            else:
+                print("Identificador")
+        #String
+        elif re.fullmatch(r'"([^"\\]|\\.)*"|\'([^\'\\]|\\.)*\'', string):
+            print("str")
+        #Number
+        elif re.fullmatch(r'\d+\.\d+|\d+|\.\d+|\d+\.\d*', string):
+            print("num")
+        #Operations
+        elif string in self.operations:
+            print(self.operations.get(string))
+        #Regex
+        elif re.fullmatch(r'/([^/\\]|\\.)+/[gimuy]*', string):
+            print("reg")
+
+obj: LexicAnalizer = LexicAnalizer()
+
+obj.verifyRegex(".3")
