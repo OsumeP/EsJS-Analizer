@@ -7,11 +7,13 @@ class LexicAnalizer:
     lexema: str
     row: int
     column: int
+    comment: bool
 
     def __init__(self):
         self.column = 1
         self.row = 1
         self.lexema = ""
+        self.comment = False
 
         self.keywords = {
                     #Control Keywords
@@ -48,15 +50,24 @@ class LexicAnalizer:
     
     
     def getToken(self, string: str) -> list[str] | None:
+        #End comment
+        if self.comment:
+            if re.search(r'\*/$', string):
+                self.comment = False
+            return []
+        #Start comment
+        elif re.fullmatch(r'/\*[\s\S]*', string):
+            self.comment = True
+            return []
         #Identifier
-        if re.fullmatch(r'(?!\d)[$\w_][\w$]*',string):
+        elif re.fullmatch(r'(?!\d)[$\w_][\w$]*',string):
             #Keyword
             if(string in self.keywords):
                 return [string]
             else:
                 return ["id", string]
         #String
-        elif re.fullmatch(r'"([^"\\]|\\.)*"|\'([^\'\\]|\\.)*\'', string):
+        elif re.fullmatch(r'"([^"\\]|\\.)*"?|\'([^\'\\]|\\.)*\'?', string):
             return ["tkn_str", string[1:len(string) - 1]]
         #Number
         elif re.fullmatch(r'\d+\.\d+|\d+|\.\d+|\d+\.\d*', string):
@@ -65,10 +76,10 @@ class LexicAnalizer:
         elif string in self.operations:
             return ["tkn_" + self.operations.get(string)]
         #Regex
-        elif re.fullmatch(r'/([^/\\]|\\.)+/', string):
+        elif re.fullmatch(r'/([^/\\]|\\.)+/?', string):
             return ["tkn_reg", string[1: len(string) - 1]]
-        #White spaces, tabs, \n, etc.
-        elif re.fullmatch(r'\s+', string):
+        #One line comments and White spaces, tabs, \n, etc.
+        elif re.fullmatch(r'\s+', string) or re.fullmatch(r'//[^\n]*', string):
             return []
 
         None
@@ -79,7 +90,8 @@ class LexicAnalizer:
             char: str = sys.stdin.read(1)
             if not char:
                 return None
-
+            
+            flag: bool = self.comment
             result: list[str | int] | None = None
 
             token: list[str] | None = self.getToken(self.lexema + char)
@@ -93,6 +105,8 @@ class LexicAnalizer:
                     result = [*token, self.row, self.column - lgthLexema]
             else:
                 self.lexema += char
+                if(flag and not self.comment):
+                    self.lexema = ""
 
             if(char == "\n"):
                 self.row += 1
@@ -120,5 +134,7 @@ token: list[str | int] | None = obj.nextToken()
 while(token is not None):
     printToken(token)
     token = obj.nextToken()
-#obj.nextToken()
-#print(obj.getToken("'\n'"))
+
+
+obj.nextToken()
+# print(obj.getToken("/* hola\nmundo */"))
