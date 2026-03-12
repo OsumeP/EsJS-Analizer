@@ -1,11 +1,18 @@
-import re
+import re, sys
 
 class LexicAnalizer:
 
     keywords: set[str]
     operations: dict[str, str]
+    lexema: str
+    row: int
+    column: int
 
     def __init__(self):
+        self.column = 1
+        self.row = 1
+        self.lexema = ""
+
         self.keywords = {
                     #Control Keywords
                     'capturar', 'caso', 'con', 'continuar', 'crear', 'elegir', 'elegir', 'mientras', 'para', 'retornar', 'sino', 'si', 'constructor', 'eliminar', 'extiende', 'finalmente', 'instanciaDe',
@@ -39,27 +46,79 @@ class LexicAnalizer:
                            "**=": "power_assign", "+": "plus", "-": "minus", "*": "times", "/": "div", "%": "mod", "==": "equal", "===": "strict_equal", "!=": "neq", "!==": "strict_neq", "<=": "leq", ">=": "geq",
                            ">": "greater", "<": "less", "=": "assign", "=>": "arrow", "!": "not", "?": "ternary", "??": "nulish"}
     
-    def verifyRegex(self, string: str):
+    
+    def getToken(self, string: str) -> list[str] | None:
         #Identifier
         if re.fullmatch(r'(?!\d)[$\w_][\w$]*',string):
             #Keyword
             if(string in self.keywords):
-                print("KeyWord")
+                return [string]
             else:
-                print("Identificador")
+                return ["id", string]
         #String
         elif re.fullmatch(r'"([^"\\]|\\.)*"|\'([^\'\\]|\\.)*\'', string):
-            print("str")
+            return ["tkn_str", string[1:len(string) - 1]]
         #Number
         elif re.fullmatch(r'\d+\.\d+|\d+|\.\d+|\d+\.\d*', string):
-            print("num")
+            return ["tkn_num", string]
         #Operations
         elif string in self.operations:
-            print(self.operations.get(string))
+            return ["tkn_" + self.operations.get(string)]
         #Regex
-        elif re.fullmatch(r'/([^/\\]|\\.)+/[gimuy]*', string):
-            print("reg")
+        elif re.fullmatch(r'/([^/\\]|\\.)+/', string):
+            return ["tkn_reg", string[1: len(string) - 1]]
+        #White spaces, tabs, \n, etc.
+        elif re.fullmatch(r'\s+', string):
+            return []
+
+        None
+    
+    def nextToken(self) -> list[str | int] | None:
+
+        while True:
+            char: str = sys.stdin.read(1)
+            if not char:
+                return None
+
+            result: list[str | int] | None = None
+
+            token: list[str] | None = self.getToken(self.lexema + char)
+
+            if(token is None):
+                token = self.getToken(self.lexema)
+                lgthLexema: int = len(self.lexema)
+                self.lexema = char
+
+                if(token is not None and len(token) > 0):
+                    result = [*token, self.row, self.column - lgthLexema]
+            else:
+                self.lexema += char
+
+            if(char == "\n"):
+                self.row += 1
+                self.column = 0
+            self.column += 1
+
+            if(result is not None):
+                return result
+
+def printToken(token: list[str | int]):
+    result: str = "<" + str(token[0]) + "," + str(token[1]) + "," + str(token[2])
+    if(len(token) > 3):
+        result += "," + str(token[3])
+    result += ">"
+
+    print(result)
+
+            
+            
+
 
 obj: LexicAnalizer = LexicAnalizer()
+token: list[str | int] | None = obj.nextToken()
 
-obj.verifyRegex(".3")
+while(token is not None):
+    printToken(token)
+    token = obj.nextToken()
+#obj.nextToken()
+#print(obj.getToken("'\n'"))
