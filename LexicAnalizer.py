@@ -101,7 +101,10 @@ class LexicAnalizer:
                 lgthLexema: int = len(self.lexema)
                 self.lexema = char
 
-                if(token is not None and len(token) > 0):
+                if(token is None):
+                    return [self.row, self.column - lgthLexema]
+
+                if(len(token) > 0):
                     result = [*token, self.row, self.column - lgthLexema]
             else:
                 self.lexema += char
@@ -117,7 +120,7 @@ class LexicAnalizer:
                 return result
 
 def printToken(token: list[str | int]):
-    result: str = "<" + str(token[0]) + "," + str(token[1]) + "," + str(token[2])
+    result: str = f"<{token[0]},{token[1]},{token[2]}"
     if(len(token) > 3):
         result += "," + str(token[3])
     result += ">"
@@ -132,6 +135,9 @@ obj: LexicAnalizer = LexicAnalizer()
 token: list[str | int] | None = obj.nextToken()
 
 while(token is not None):
+    if(len(token) == 2):
+        print(f">>> Error lexico (linea: {token[0]}, posicion: {token[1]})")
+        break
     printToken(token)
     token = obj.nextToken()
 
