@@ -7,8 +7,9 @@ class LexicAnalizer:
     lexema: str
     row: int
     column: int
-    comment: bool
-    regex: bool
+    isComment: bool
+    isRegex: bool
+    isString: bool
     canBe: bool
     inputCon: str
     index: int
@@ -18,12 +19,13 @@ class LexicAnalizer:
         self.column = 1
         self.row = 1
         self.lexema = ""
-        self.comment = False
-        self.regex = False
+        self.isComment = False
+        self.isRegex = False
         self.inputCon = inputCol
         self.index = 0
         self.startLexema = 0
         self.canBe = True
+        self.isString = False
 
         self.keywords = {
                     #Control Keywords
@@ -59,26 +61,31 @@ class LexicAnalizer:
                            ">": "greater", "<": "less", "=": "assign", "=>": "arrow", "!": "not", "?": "ternary", "??": "nulish"}
     
     
-    def getToken(self, string: str) -> list[str] | None:
+    def getToken(self, string: str):
         #End comment
-        if self.comment:
+        if self.isComment:
             if re.search(r'\*/$', string):
-                self.comment = False
+                self.isComment = False
             return []
         #Start comment
         elif re.fullmatch(r'/\*[\s\S]*', string):
-            self.comment = True
+            self.isComment = True
             return []
         #Identifier
-        elif re.fullmatch(r'(?!\d)[$\w_][\w$]*',string):
+        elif re.fullmatch(r'(?:[$A-Za-z_\u00A0-\uFFFF]|\\u[0-9A-Fa-f]{4}|\\u\{[0-9A-Fa-f]+\})(?:[$A-Za-z0-9_\u00A0-\uFFFF]|\\u[0-9A-Fa-f]{4}|\\u\{[0-9A-Fa-f]+\})*',string):
             #Keyword
             if(string in self.keywords):
                 return [string]
             else:
                 return ["id", string]
         #String
-        elif re.fullmatch(r'"(?:\\.|[^"\\\n])*"?|\'(?:\\.|[^\'\\\n])*\'?', string):
+        elif re.fullmatch(r'"(?:\\.|[^"\n])*"|\'(?:\\.|[^\'\n])*\'', string):
+            self.isString = False
             return ["tkn_str", string[1:len(string) - 1]]
+        #Partial String
+        elif re.fullmatch(r'"(?:\\.|[^"\n])*|\'(?:\\.|[^\'\n])*', string) and self.canBe:
+            self.isString = True
+            return []
         #Number
         elif re.fullmatch(r'\d+\.\d+|\d+', string):
             return ["tkn_num", string]
@@ -86,22 +93,22 @@ class LexicAnalizer:
         elif string in self.operations:
             return ["tkn_" + self.operations.get(string)]
         #One line comments and White spaces, tabs, \n, etc.
-        elif re.fullmatch(r'\s+', string) or re.fullmatch(r'//[^\n]*', string):
+        elif re.fullmatch(r'\s+', string) or re.fullmatch(r'//[^\n]*', string) or re.fullmatch(r'(?:[$A-Za-z_\u00A0-\uFFFF]|\\u[0-9A-Fa-f]{0,4}|\\u\{[0-9A-Fa-f]*\})?(?:[$A-Za-z0-9_\u00A0-\uFFFF]|\\u[0-9A-Fa-f]{0,4}|\\u\{[0-9A-Fa-f]*\})*', string):
             return []
         #Regex
         elif re.fullmatch(r'/(.)+/', string):
-            self.regex = False
+            self.isRegex = False
             return ["tkn_reg", string[1: len(string) - 1]]
-        #Regex parcial
+        #Partial Regex
         elif re.fullmatch(r'/(.)+/?', string) and self.canBe:
-            self.regex = True
+            self.isRegex = True
             return []
         elif (string == ".." or re.fullmatch(r'\d+\.\d*', string)) and self.canBe:
             return []
 
         return None
     
-    def nextToken(self) -> list[str | int] | None:
+    def nextToken(self):
 
         while self.index < len(self.inputCon) + 1:
             if self.index == len(self.inputCon):
@@ -116,25 +123,33 @@ class LexicAnalizer:
             char: str = self.inputCon[self.index]
             self.index += 1
             
-            flagComment: bool = self.comment
-            flagRegex: bool = self.regex
-            result: list[str | int] | None = None
+            flagComment: bool = self.isComment
+            flagRegex: bool = self.isRegex
+            result = None
 
-            token: list[str] | None = self.getToken(self.lexema + char)
+            token = self.getToken(self.lexema + char)
             
-            if(char == "\n" and self.regex):
-                self.regex = False
+            if(char == "\n" and self.isRegex):
+                self.isRegex = False
                 self.canBe = False
                 self.column -= len(self.lexema) - 1
                 self.index = self.startLexema + 1
                 self.lexema = "/"
                 continue
 
+            if(char == "\n" and self.isString):
+                self.isString = False
+                self.canBe = False
+                self.column -= len(self.lexema)
+                self.index = self.startLexema
+                self.lexema = ""
+                continue
+
             if(len(self.lexema) == 2 and self.lexema[0] == "." and self.lexema[0] == "." and token is None):
                 self.canBe = False
-                self.column -= len(self.lexema) - 1
-                self.index = self.startLexema + 1
-                self.lexema = "."
+                self.column -= len(self.lexema)
+                self.index = self.startLexema
+                self.lexema = ""
                 continue
 
             if(re.fullmatch(r"\d+\.",self.lexema) and not (char >= "0" and char <= "9") ):
@@ -157,9 +172,9 @@ class LexicAnalizer:
                     result = [*token, self.row, self.column - lgthLexema]
             else:
                 self.lexema += char
-                if(flagComment and not self.comment):
+                if(flagComment and not self.isComment):
                     self.lexema = ""
-                if(flagRegex and not self.regex):
+                if(flagRegex and not self.isRegex):
                     lgthLexema: int = len(self.lexema) - 1
                     result = [*token, self.row, self.column - lgthLexema]
                     self.lexema = ""
@@ -173,7 +188,7 @@ class LexicAnalizer:
                 self.canBe = True
                 return result
 
-def printToken(token: list[str | int]):
+def printToken(token):
     result: str = f"<{token[0]},{token[1]},{token[2]}"
     if(len(token) > 3):
         result += "," + str(token[3])
@@ -187,7 +202,7 @@ def printToken(token: list[str | int]):
 
 obj: LexicAnalizer = LexicAnalizer(sys.stdin.read())
 obj.inputCon += "\n"
-token: list[str | int] | None = obj.nextToken()
+token = obj.nextToken()
 
 while(token is not None):
     if(len(token) == 2):
