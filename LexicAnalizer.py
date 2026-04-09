@@ -1,6 +1,7 @@
 import re
 import sys
-
+from Token import Token
+from EnumTokenModule import EnumToken
 class Lexer:
 
     def __init__(self):
@@ -89,6 +90,8 @@ class Lexer:
             ("whitespace", re.compile(r'\s+'))
         ]
 
+        self.tokens = []
+
     def tokenize(self, code):
 
         row = 1
@@ -96,7 +99,7 @@ class Lexer:
         pos = 0
         length = len(code)
 
-        tokens = []
+        self.tokens = []
 
         while pos < length:
 
@@ -122,29 +125,27 @@ class Lexer:
                     elif name == "identifier":
 
                         if lexeme in self.keywords:
-                            tokens.append(
-                                f"<{lexeme},{row},{col}>"
+                            self.tokens.append(
+                                Token(EnumToken.KEYWORD, lexeme, row, col)
                             )
                         else:
-                            tokens.append(
-                                f"<id,{lexeme},{row},{col}>"
+                            self.tokens.append(
+                                Token(EnumToken.ID, lexeme, row, col)
                             )
 
                     elif name == "number":
-                        tokens.append(
-                            f"<tkn_num,{lexeme},{row},{col}>"
+                        self.tokens.append(
+                            Token(EnumToken.NUMBER, lexeme, row, col)
                         )
 
                     elif name == "string":
-                        content = lexeme[1:-1]
-                        tokens.append(
-                            f"<tkn_str,{content},{row},{col}>"
+                        self.tokens.append(
+                            Token(EnumToken.STRING, lexeme[1:-1], row, col)
                         )
 
                     elif name == "regex":
-                        content = lexeme[1:-1]
-                        tokens.append(
-                            f"<tkn_reg,{content},{row},{col}>"
+                        self.tokens.append(
+                            Token(EnumToken.REGEX, lexeme[1:-1], row, col)
                         )
 
                     lines = lexeme.split('\n')
@@ -170,7 +171,7 @@ class Lexer:
 
             if matched_op:
 
-                tokens.append(
+                self.tokens.append(
                     f"<tkn_{self.operators[matched_op]},{row},{col}>"
                 )
 
@@ -179,14 +180,14 @@ class Lexer:
                 continue
             
             
-            tokens.append(
-                f">>> Error lexico (linea: {row}, posicion: {col})"
+            self.tokens.append(
+                Token(EnumToken.ERROR, "", row, col)
             )
-            for t in tokens:
+            for t in self.tokens:
                 print(t)
             return
 
-        for t in tokens:
+        for t in self.tokens:
             print(t)
 
 
