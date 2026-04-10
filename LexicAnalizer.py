@@ -77,7 +77,7 @@ class Lexer:
             "]": "closing_bra"
         }
 
-        self.regex_patterns = [
+        self.regexPatterns = [
             ("comment_block", re.compile(r'/\*[\s\S]*?\*/')),
             ("comment_line", re.compile(r'//[^\n]*')),
             ("string", re.compile(r'"(?:\\.|[^"\n])*"|\'(?:\\.|[^\'\n])*\'')),
@@ -105,7 +105,7 @@ class Lexer:
 
             match = None
 
-            for name, pattern in self.regex_patterns:
+            for name, pattern in self.regexPatterns:
 
                 match = pattern.match(code, pos)
 
@@ -162,21 +162,21 @@ class Lexer:
             if match:
                 continue
 
-            matched_op = None
+            matchedOp = None
             for op in sorted(self.operators.keys(), key=len, reverse=True):
 
                 if code.startswith(op, pos):
-                    matched_op = op
+                    matchedOp = op
                     break
 
-            if matched_op:
+            if matchedOp:
 
                 self.tokens.append(
-                    f"<tkn_{self.operators[matched_op]},{row},{col}>"
+                    f"<tkn_{self.operators[matchedOp]},{row},{col}>"
                 )
 
-                pos += len(matched_op)
-                col += len(matched_op)
+                pos += len(matchedOp)
+                col += len(matchedOp)
                 continue
             
             
