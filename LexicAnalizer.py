@@ -170,9 +170,8 @@ class Lexer:
                     break
 
             if matchedOp:
-
                 self.tokens.append(
-                    f"<tkn_{self.operators[matchedOp]},{row},{col}>"
+                    Token(EnumToken.OPERATOR, self.operators[matchedOp], row, col, matchedOp)
                 )
 
                 pos += len(matchedOp)
