@@ -1,10 +1,9 @@
+from SintacticGenerator import SintacticGenerator
+from EnumTokenModule import EnumToken
 class Grammar:
     productions = {
-        "S": [["A", "uno", "B", "C"], ["S", "dos"]],
-        "A": [["B", "C", "D"], ["A", "tres"], ["ε"]],
-        "B": [["D", "cuatro", "C", "tres"], ["ε"]],
-        "C": [["cinco", "D", "B"], ["ε"]],
-        "D": [["seis"], ["ε"]]
+        "S": [["mut", "B"], ["var", EnumToken.NUMBER, "B"]],
+        "B": [["a", "B", "b"], ["b"]],
     }
 
     firsts: dict[str, set[str]]
@@ -110,6 +109,11 @@ obj = Grammar("S")
 obj.computeFirst()
 obj.computeNext()
 obj.computePred()
+sg = SintacticGenerator(obj.productions, obj.pred)
+sg.generate_parser()
 # print(obj.firsts)
 # print(obj.nexts)
-print(obj.pred)
+# print("Producciones")
+# print(obj.productions)
+# print("Predeccion")
+# print(obj.pred)

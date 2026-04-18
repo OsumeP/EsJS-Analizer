@@ -188,14 +188,12 @@ class Lexer:
 
         for t in self.tokens:
             print(t)
+    
+    index = -1
 
+    def next_token(self):
+        self.index += 1
+        if(self.index >= len(self.tokens)):
+            return None
+        return self.tokens[self.index]
 
-def main():
-
-    code = sys.stdin.read()
-    lexer = Lexer()
-    lexer.tokenize(code)
-
-
-if __name__ == "__main__":
-    main()
