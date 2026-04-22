@@ -171,7 +171,7 @@ class Lexer:
 
             if matchedOp:
                 self.tokens.append(
-                    Token(EnumToken.OPERATOR, self.operators[matchedOp], row, col, matchedOp)
+                    Token(EnumToken.OPERATOR, matchedOp, row, col, self.operators[matchedOp])
                 )
 
                 pos += len(matchedOp)
@@ -182,18 +182,13 @@ class Lexer:
             self.tokens.append(
                 Token(EnumToken.ERROR, "", row, col)
             )
-            for t in self.tokens:
-                print(t)
             return
-
-        for t in self.tokens:
-            print(t)
     
     index = -1
 
     def next_token(self):
         self.index += 1
         if(self.index >= len(self.tokens)):
-            return None
+            return Token(EnumToken.END, "$", 0, 0)
         return self.tokens[self.index]
 

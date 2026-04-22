@@ -25,7 +25,7 @@ class Token:
         if(self.type == EnumToken.STRING):
             return f"<tkn_str,{self.name},{self.row},{self.col}>"
         if(self.type == EnumToken.OPERATOR):
-            return f"<tkn_{self.name},{self.row},{self.col}>"
+            return f"<tkn_{self.operation},{self.row},{self.col}>"
         if(self.type == EnumToken.REGEX):
             return f"<tkn_reg,{self.name},{self.row},{self.col}>"
         if(self.type == EnumToken.ERROR):

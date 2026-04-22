@@ -40,14 +40,22 @@ class SintacticGenerator:
             # Cabecera
             f.write("import sys\n")
             f.write("from LexicAnalizer import Lexer\n")
-            f.write("from EnumTokenModule import EnumToken\n\n")
+            f.write("from EnumTokenModule import EnumToken\n")
+            f.write("from Token import Token\n\n")
 
             f.write("class Parser:\n")
 
             # constructor
             f.write("    def __init__(self, lexer):\n")
             f.write("        self.lexer = lexer\n")
-            f.write("        self.lookahead = self.lexer.next_token()\n\n")
+            f.write("        self.lookahead = self.next_token()\n\n")
+
+            # next token wrapper
+            f.write("    def next_token(self):\n")
+            f.write("        token = self.lexer.next_token()\n")
+            f.write("        if token is None:\n")
+            f.write("            return Token(EnumToken.END, 'EOF', -1, -1, None)\n")
+            f.write("        return token\n\n")
 
             # token
             f.write("    def token(self):\n")
@@ -57,20 +65,25 @@ class SintacticGenerator:
             f.write("    def match(self, t):\n")
             f.write("        if isinstance(t, str):\n")
             f.write("            if self.lookahead.name == t:\n")
-            f.write("                self.lookahead = self.lexer.next_token()\n")
+            f.write("                self.lookahead = self.next_token()\n")
             f.write("            else:\n")
             f.write("                self.syntax_error([t])\n")
             f.write("        else:\n")
             f.write("            if self.lookahead.type == t:\n")
-            f.write("                self.lookahead = self.lexer.next_token()\n")
+            f.write("                self.lookahead = self.next_token()\n")
             f.write("            else:\n")
             f.write("                self.syntax_error([t])\n\n")
 
-            # error
+            # syntax error
             f.write("    def syntax_error(self, expected):\n")
-            f.write("        raise Exception(\n")
-            f.write("            f\"Error sintáctico. Se esperaba {expected} y llegó {self.lookahead}\"\n")
-            f.write("        )\n\n")
+            f.write("        if self.lookahead.type == EnumToken.END:\n")
+            f.write("            found = 'final de archivo'\n")
+            f.write("        else:\n")
+            f.write("            found = self.lookahead.name\n\n")
+
+            f.write("        expected_str = ', '.join(map(str, expected))\n\n")
+
+            f.write('        print(f"<{self.lookahead.row}:{self.lookahead.col}> Error sintactico: se encontro: \"{found}\"; se esperaba: {expected_str}.)\n\n')
 
             # Generar funciones por no terminal
             for nonterminal in self.productions:
